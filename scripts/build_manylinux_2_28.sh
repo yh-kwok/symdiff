@@ -9,8 +9,8 @@ export CMAKE="cmake"
 export CMAKE_CXX_FLAGS=""
 export CXX="g++"
 
-export PYTHON3_BIN=python3.7
-export PIP_BIN=/opt/python/cp37-cp37m/bin/pip
+export PYTHON3_BIN="python3.9"
+export PIP_BIN="/opt/python/cp39-cp39/bin/pip"
 ${PIP_BIN} install wheel auditwheel
 export PYTHON3_INCLUDE=$(${PYTHON3_BIN} -c "from sysconfig import get_paths as gp; print(gp()['include'])")
 export PYTHON3_ARCHIVE=""
