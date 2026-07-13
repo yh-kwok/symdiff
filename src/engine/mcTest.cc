@@ -170,6 +170,7 @@ Eqo::EqObjPtr processSubstFunction(const std::string &function, const std::vecto
 Eqo::EqObjPtr processClearFunction()
 {
    Eqo::UserFuncMap.clear();
+   Eqo::RegisterBuiltinVariadicUserFuncs();
    Context &context = Context::GetInstance();
    context.ClearAllModels();
    return Eqo::con(0);
@@ -323,7 +324,22 @@ Eqo::EqObjPtr EvaluateUserFunction(const std::string &fname, std::vector<Eqo::Eq
     Eqo::EqObjPtr ret = Eqo::con(0);
     const size_t ulen = Eqo::UserFuncMap[fname].size();
     const size_t vlen = objs.size();
-    if ( ulen != vlen)
+    if (Eqo::IsVariadicUserFunc(fname))
+    {
+	if (vlen < 1)
+	{
+	    std::ostringstream os;
+	    os << fname << " requires at least 1 argument, but has been supplied with " <<
+		vlen << " arguments(s).";
+	    std::string foo = os.str();
+	    mcerror(foo.c_str());
+	}
+	else
+	{
+	    ret = Eqo::EqObjPtr(new Eqo::UserFunc(fname, objs));
+	}
+    }
+    else if ( ulen != vlen)
     {
 	std::ostringstream os;
 	os << fname << " has been declared or defined with "

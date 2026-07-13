@@ -236,7 +236,13 @@ void DLL_PROTECTED ResetAllData()
 {
   Eqo::variableMap.clear();
   Eqo::UserFuncMap.clear();
+  Eqo::RegisterBuiltinVariadicUserFuncs();
   Context::DestroyInstance();
+}
+
+void DLL_PROTECTED RegisterBuiltinVariadicUserFuncs()
+{
+  Eqo::RegisterBuiltinVariadicUserFuncs();
 }
 }
 

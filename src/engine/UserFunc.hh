@@ -19,6 +19,8 @@ typedef std::vector<UserDiffInfo>             UserDiffInfoVec;
 
 void DLL_PROTECTED SetUserFuncDiffs(std::string, UserDiffInfoVec &);
 void DLL_PROTECTED CreateUserFunc(std::string, size_t);
+void DLL_PROTECTED RegisterBuiltinVariadicUserFuncs();
+bool DLL_PROTECTED IsVariadicUserFunc(const std::string &);
 
 extern std::map<std::string, UserDiffInfoVec> UserFuncMap;
 

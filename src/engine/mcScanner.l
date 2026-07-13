@@ -83,7 +83,7 @@ clear   {mclval.str=yytext; return CLEARUSERFUNC;}
 &&         {mclval.str=yytext; return AND;}
 \|\|       {mclval.str=yytext; return OR;}
 
-\$([A-Za-z]|{UTF8})([A-Za-z_0-9]|{UTF8})*  {
+\$([A-Za-z_]|{UTF8})([A-Za-z_0-9]|{UTF8})*  {
                 mclval.str = yytext; return MACRO;
                 }
 if {
@@ -96,7 +96,7 @@ ifelse {
       return IFELSE;
    }
 
-([A-Za-z]|{UTF8})([A-Za-z_0-9:@.]|{UTF8})*  {
+([A-Za-z_]|{UTF8})([A-Za-z_0-9:@.]|{UTF8})*  {
                 mclval.str = yytext;
 
 		if (EngineAPI::isUnaryFunction(mclval.str))

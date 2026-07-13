@@ -22,6 +22,30 @@ EqObjPtr UserFunc::getReciprocal()
 
 std::map<std::string, UserDiffInfoVec> UserFuncMap;
 
+bool IsVariadicUserFunc(const std::string &nm)
+{
+    return nm == "kahan";
+}
+
+void RegisterBuiltinVariadicUserFuncs()
+{
+    // size 0 marks variadic: EvaluateUserFunction / Derivative special-case these
+    if (!UserFuncMap.count("kahan"))
+    {
+        CreateUserFunc("kahan", 0);
+    }
+}
+
+namespace {
+struct BuiltinVariadicUserFuncRegistrar {
+    BuiltinVariadicUserFuncRegistrar()
+    {
+        RegisterBuiltinVariadicUserFuncs();
+    }
+};
+static BuiltinVariadicUserFuncRegistrar builtin_variadic_user_func_registrar;
+}
+
 // Used for implicitly declared functions
 void CreateUserFunc(std::string nm, size_t nar)
 {
@@ -55,6 +79,10 @@ UserFunc::UserFunc(std::string nm, std::vector<EqObjPtr> &a) : EquationObject(US
     if (!UserFuncMap.count(nm))
     {
         UserFuncMap[nm].resize(a.size());
+    }
+    else if (IsVariadicUserFunc(nm) && a.empty())
+    {
+        // reject empty kahan() at construction sites that reach here
     }
 
     args = a; // assume that I own this data
@@ -98,35 +126,60 @@ EqObjPtr UserFunc::subst(const std::string &str, EqObjPtr eqo)
 EqObjPtr UserFunc::Derivative(EqObjPtr foo)
 {
     std::vector<EqObjPtr> der;
-    for (size_t i = 0; i < args.size(); ++i)
+    if (IsVariadicUserFunc(name))
     {
-        Eqo::EqObjPtr y = args[i]->Derivative(foo);
-        // clean up and use const references
-        EqObjPtr x;
-        if (UserFuncMap[name][i].second)
+        // Same AD policy as define(kahan3/4, 1, ...): unit partials, any arity.
+        for (size_t i = 0; i < args.size(); ++i)
         {
-            x = UserFuncMap[name][i].second;
+            Eqo::EqObjPtr y = args[i]->Derivative(foo);
+            EqObjPtr x = con(1.0);
+            if (y->isZero())
+            {
+                x = con(0);
+            }
+            else if (!y->isOne())
+            {
+                x = x * y;
+            }
+            der.push_back(x);
         }
-        else
+    }
+    else
+    {
+        for (size_t i = 0; i < args.size(); ++i)
         {
-            x = con(0);
+            Eqo::EqObjPtr y = args[i]->Derivative(foo);
+            // clean up and use const references
+            EqObjPtr x;
+            if (UserFuncMap[name][i].second)
+            {
+                x = UserFuncMap[name][i].second;
+            }
+            else
+            {
+                x = con(0);
+            }
+            // substitute in all of our arguments
+            for (size_t j = 0; j < args.size(); ++j)
+            {
+                const std::string &var = UserFuncMap[name][j].first;
+                x = x->subst(var, args[j]);
+            }
+            // Bring this test out of the for loop
+            if (y->isZero()) // don't want redundant ddx = 1
+            {
+                x = con(0); // chain rule
+            }
+            else if (!y->isOne())
+            {
+                x = x * y;
+            }
+            der.push_back(x);
         }
-        // substitute in all of our arguments
-        for (size_t j = 0; j < args.size(); ++j)
-        {
-            const std::string &var = UserFuncMap[name][j].first;
-            x = x->subst(var, args[j]);
-        }
-        // Bring this test out of the for loop
-        if (y->isZero()) // don't want redundant ddx = 1
-        {
-            x = con(0); // chain rule
-        }
-        else if (!y->isOne())
-        {
-            x = x * y;
-        }
-        der.push_back(x);
+    }
+    if (der.empty())
+    {
+        return con(0);
     }
     if (der.size() == 1)
         return der[0];

@@ -99,5 +99,6 @@ typedef Eqo::EqObjPtr (*modelDerivativeRule_ptr)(Eqo::EqObjPtr, Eqo::EqObjPtr);
 void DLL_PROTECTED SetDerivativeRule(modelDerivativeRule_ptr);
 
 void DLL_PROTECTED ResetAllData();
+void DLL_PROTECTED RegisterBuiltinVariadicUserFuncs();
 }
 #endif
